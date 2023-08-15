@@ -75,7 +75,7 @@ export class TransactionsListComponent implements OnInit, OnChanges {
               for (let i = 0; i < txIds.length; i += 50) {
                 batches.push(txIds.slice(i, i + 50));
               }
-              return forkJoin(batches.map(batch => this.apiService.getOutspendsBatched$(batch)));
+              return forkJoin(batches.map(batch => this.electrsApiService.getOutspendsBatched$(batch)));
             } else {
               return of([]);
             }
