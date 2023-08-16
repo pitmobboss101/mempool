@@ -216,12 +216,16 @@ class ElectrsApi implements AbstractBitcoinApi {
     return this.failoverRouter.$get<IEsploraApi.Transaction>('/tx/' + txId);
   }
 
+  async $getRawTransactions(txids: string[]): Promise<IEsploraApi.Transaction[]> {
+    return this.failoverRouter.$post<IEsploraApi.Transaction[]>('/internal-api/txs', txids, 'json');
+  }
+
   async $getMempoolTransactions(txids: string[]): Promise<IEsploraApi.Transaction[]> {
-    return this.failoverRouter.$post<IEsploraApi.Transaction[]>('/mempool/txs', txids, 'json');
+    return this.failoverRouter.$post<IEsploraApi.Transaction[]>('/internal-api/mempool/txs', txids, 'json');
   }
 
   async $getAllMempoolTransactions(lastSeenTxid?: string): Promise<IEsploraApi.Transaction[]> {
-    return this.failoverRouter.$get<IEsploraApi.Transaction[]>('/mempool/txs' + (lastSeenTxid ? '/' + lastSeenTxid : ''));
+    return this.failoverRouter.$get<IEsploraApi.Transaction[]>('/internal-api/mempool/txs' + (lastSeenTxid ? '/' + lastSeenTxid : ''));
   }
 
   $getTransactionHex(txId: string): Promise<string> {
@@ -295,6 +299,19 @@ class ElectrsApi implements AbstractBitcoinApi {
 
   async $getBatchedOutspends(txids: string[]): Promise<IEsploraApi.Outspend[][]> {
     return this.failoverRouter.$get<IEsploraApi.Outspend[][]>('/txs/outspends', 'json', { txids: txids.join(',') });
+  }
+
+  async $getBatchedOutspendsInternal(txids: string[]): Promise<IEsploraApi.Outspend[][]> {
+    const allOutspends: IEsploraApi.Outspend[][] = [];
+    const sliceLength = 50;
+    for (let i = 0; i < Math.ceil(txids.length / sliceLength); i++) {
+      const slice = txids.slice(i * sliceLength, (i + 1) * sliceLength);
+      const sliceOutspends = await this.failoverRouter.$get<IEsploraApi.Outspend[][]>('/txs/outspends', 'json', { txids: slice.join(',') });
+      for (const outspends of sliceOutspends) {
+        allOutspends.push(outspends);
+      }
+    }
+    return allOutspends;
   }
 
   public startHealthChecks(): void {

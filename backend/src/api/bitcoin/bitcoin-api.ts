@@ -60,6 +60,19 @@ class BitcoinApi implements AbstractBitcoinApi {
       });
   }
 
+  async $getRawTransactions(txids: string[]): Promise<IEsploraApi.Transaction[]> {
+    const txs: IEsploraApi.Transaction[] = [];
+    for (const txid of txids) {
+      try {
+        const tx = await this.$getRawTransaction(txid, false, true);
+        txs.push(tx);
+      } catch (err) {
+        // skip failures
+      }
+    }
+    return txs;
+  }
+
   $getMempoolTransactions(txids: string[]): Promise<IEsploraApi.Transaction[]> {
     throw new Error('Method getMempoolTransactions not supported by the Bitcoin RPC API.');
   }
@@ -196,6 +209,10 @@ class BitcoinApi implements AbstractBitcoinApi {
       outspends.push(outspend);
     }
     return outspends;
+  }
+
+  async $getBatchedOutspendsInternal(txId: string[]): Promise<IEsploraApi.Outspend[][]> {
+    return this.$getBatchedOutspends(txId);
   }
 
   $getEstimatedHashrate(blockHeight: number): Promise<number> {
